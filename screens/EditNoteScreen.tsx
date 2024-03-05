@@ -1,14 +1,14 @@
 /* eslint-disable prettier/prettier */
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useDispatch } from 'react-redux';
-import { editNoteBodyAction, editNoteTitleAction } from '../actions/notesActions';
+import { View, Text, StyleSheet, TextInput, ScrollView, StatusBar, TouchableOpacity, Alert } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { addNoteAction } from '../actions/notesActions';
+import { getUpdateAuthStatusRequest } from '../actions/authActions';
 
-const EditNoteScreen = ({ route }): React.JSX.Element => {
+const EditNoteScreen = ({ navigation, route }): React.JSX.Element => {
     const dispatch = useDispatch();
+    const auth = useSelector(state => state.auth);
 
-    const navigation = useNavigation();
     const note = route.params?.data || { id: '', title: '', body: '' };
     const [title, setTitle] = React.useState(note.title);
     const [body, setBody] = React.useState(note.body);
@@ -16,33 +16,40 @@ const EditNoteScreen = ({ route }): React.JSX.Element => {
     React.useEffect(() => {
         StatusBar.setBackgroundColor(note.color);
         StatusBar.setBarStyle('light-content');
+        dispatch(getUpdateAuthStatusRequest());
+        if (auth.userId === '') {
+            navigation.navigate('auth_screen');
+        }
         return () => {
             StatusBar.setBackgroundColor('#222433');
             StatusBar.setBarStyle('light-content');
         };
-    });
+    }, [auth.userId, dispatch, navigation, note.color]);
 
-    const handleBodyChange = (body) => {
-        setBody(body);
-        dispatch(editNoteBodyAction(note.id, body));
+    const submitNote = () => {
+        if (title.trim().length === 0) {
+            Alert.alert('Warning', 'Title cannot be empty!');
+            return;
+        }
+        dispatch(addNoteAction({ id: note.id, body }));
     };
 
-    const handleTitleChange = (title) => {
-        setTitle(title);
-        dispatch(editNoteTitleAction(note.id, title));
+    const handleGoBack = () => {
+        submitNote();
+        navigation.goBack();
     };
 
     return (
         <View style={{ ...styles.mainContainer, backgroundColor: note.color }}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}><Text style={styles.backButtonText}>&larr;</Text></TouchableOpacity>
-                <TextInput placeholder="Title" placeholderTextColor={'#fff'} onChangeText={(text) => handleTitleChange(text)} value={title} style={styles.titleTextInput} />
+                <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Text style={styles.backButtonText}>&larr;</Text></TouchableOpacity>
+                <TextInput placeholder="Title" placeholderTextColor={'#fff'} onChangeText={(text) => setTitle(text)} value={title} style={styles.titleTextInput} />
             </View>
             <ScrollView showsVerticalScrollIndicator={true}>
                 <TextInput
                     multiline={true}
                     value={body}
-                    onChangeText={(text) => handleBodyChange(text)}
+                    onChangeText={(text) => setBody(text)}
                     style={styles.bodyTextInput}
                     placeholder="Type your note here"
                     placeholderTextColor={'#fff'}

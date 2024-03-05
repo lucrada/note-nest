@@ -3,6 +3,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, StatusBar } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchNotesAction } from '../actions/notesActions';
+import { getUpdateAuthStatusRequest, getUserLogoutRequest } from '../actions/authActions';
 
 const WIDTH = Dimensions.get('window').width;
 const HEIGHT = Dimensions.get('window').height;
@@ -34,6 +35,8 @@ const _separateNotesColumns = (notes) => {
 const NotesScreen = ({ navigation }): React.JSX.Element => {
     const dispatch = useDispatch();
 
+    const auth = useSelector(state => state.auth);
+
     const notesStore = useSelector(state => state.notes);
     const notes = notesStore.notes;
     const [notesLeftCol, notesRightCol] = _separateNotesColumns(notes);
@@ -41,13 +44,18 @@ const NotesScreen = ({ navigation }): React.JSX.Element => {
     React.useEffect(() => {
         StatusBar.setBackgroundColor('#222433');
         StatusBar.setBarStyle('light-content');
+        dispatch(getUpdateAuthStatusRequest());
+        if (auth.userId === '') {
+            navigation.navigate('auth_screen');
+        }
         dispatch(fetchNotesAction('1'));
-    }, [dispatch]);
+    }, [dispatch, navigation, auth.userId]);
 
     return (
         <View style={styles.mainContainer}>
             <View style={styles.header}>
                 <Text style={styles.headerText}>Notes</Text>
+                <TouchableOpacity onPress={() => dispatch(getUserLogoutRequest())}><Text style={styles.logoutButtonText}>Logout</Text></TouchableOpacity>
             </View>
             {notes.length === 0 ? <View style={styles.messageContainer}><Text style={styles.messageText}>You have not added any notes !</Text></View> :
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollViewStyle}>
@@ -60,7 +68,7 @@ const NotesScreen = ({ navigation }): React.JSX.Element => {
                 </ScrollView>
             }
             <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('edit_notes_screen', { data: { title: '', color: '#67A900', body: '' } })}><View style={styles.addButtonContainer}><Text style={styles.addButtonText}>+</Text></View></TouchableOpacity>
-        </View>
+        </View >
     );
 };
 
@@ -71,17 +79,24 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         backgroundColor: '#222433',
         paddingHorizontal: 16,
-        paddingTop: 40,
+        paddingTop: 20,
         paddingBottom: 10,
     },
     header: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 24,
     },
     headerText: {
         fontSize: 32,
         fontWeight: 'bold',
-        marginBottom: 24,
         color: '#eee',
+    },
+    logoutButtonText: {
+        color: '#E4C31B',
+        fontWeight: 'bold',
+        fontSize: 18,
     },
     messageContainer: {
         flex: 1,
@@ -138,7 +153,7 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     addButtonText: {
-        color: '#eee',
+        color: '#222433',
         textAlign: 'center',
         fontSize: 28,
         fontWeight: 'bold',

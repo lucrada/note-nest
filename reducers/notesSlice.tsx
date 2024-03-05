@@ -10,16 +10,14 @@ const notesSlice = createSlice({
     initialState,
     reducers: {
         fetchNotes: (state, action) => {
-            state.notes = action.payload.notes;
+            state.notes = action.payload;
         },
-        editNoteTitleWithId: (state, action) => {
-            state.notes.map(note => note.id === action.payload.id ? action.payload.newTitle : note.title);
-        },
-        editNoteBodyWithId: (state, action) => {
-            state.notes.map(note => note.id === action.payload.id ? action.payload.newBody : note.body);
+        updateNote: (state, action) => {
+            const updatedNote = action.payload;
+            state.notes = state.notes.map(note => note.id === updatedNote.id ? updatedNote : note);
         },
     },
 });
 
-export const { } = notesSlice.actions;
+export const { fetchNotes, updateNote } = notesSlice.actions;
 export default notesSlice.reducer;
