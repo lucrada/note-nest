@@ -24,7 +24,7 @@ export const getErrorMessage = errorCode => {
 };
 
 export const getRandomColor = () => {
-    const colors = ['#A90067', '#0067A9', '#67A900', '#039079', '#790390', '#039079', '#790390'];
+    const colors = ['#A90067', '#0067A9', '#67A900', '#039079', '#790390', '#B5A54A'];
     const randomIndex = Math.floor(Math.random() * colors.length);
     return colors[randomIndex];
 };
