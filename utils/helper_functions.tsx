@@ -22,3 +22,9 @@ export const getErrorMessage = errorCode => {
         return 'Please check your internet connection';
     }
 };
+
+export const getRandomColor = () => {
+    const colors = ['#A90067', '#0067A9', '#67A900', '#039079', '#790390', '#039079', '#790390'];
+    const randomIndex = Math.floor(Math.random() * colors.length);
+    return colors[randomIndex];
+};

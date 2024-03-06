@@ -1,15 +1,15 @@
 /* eslint-disable prettier/prettier */
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, StatusBar, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { addNoteAction } from '../actions/notesActions';
+import { addNoteAction, updateNoteAction } from '../actions/notesActions';
 import { getUpdateAuthStatusRequest } from '../actions/authActions';
 
 const EditNoteScreen = ({ navigation, route }): React.JSX.Element => {
     const dispatch = useDispatch();
     const auth = useSelector(state => state.auth);
 
-    const note = route.params?.data || { id: '', title: '', body: '' };
+    const note = route.params?.data;
     const [title, setTitle] = React.useState(note.title);
     const [body, setBody] = React.useState(note.body);
 
@@ -28,10 +28,16 @@ const EditNoteScreen = ({ navigation, route }): React.JSX.Element => {
 
     const submitNote = () => {
         if (title.trim().length === 0) {
-            Alert.alert('Warning', 'Title cannot be empty!');
             return;
         }
-        dispatch(addNoteAction({ id: note.id, body }));
+        if (note.id === '') {
+            dispatch(addNoteAction({ title, body, color: note.color }));
+            return;
+        }
+        if (note.title.trim() === title.trim() && note.body.trim() === body.trim()) {
+            return;
+        }
+        dispatch(updateNoteAction({ id: note.id, color: note.color, title, body }));
     };
 
     const handleGoBack = () => {

@@ -1,9 +1,10 @@
 /* eslint-disable prettier/prettier */
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, StatusBar, Alert } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchNotesAction } from '../actions/notesActions';
+import { fetchNotesAction, removeNoteAction } from '../actions/notesActions';
 import { getUpdateAuthStatusRequest, getUserLogoutRequest } from '../actions/authActions';
+import { getRandomColor } from '../utils/helper_functions';
 
 const WIDTH = Dimensions.get('window').width;
 const HEIGHT = Dimensions.get('window').height;
@@ -14,10 +15,20 @@ const _get45Percent = (str) => {
 };
 
 const Note = ({ id, title, color, body, navigation }) => {
+    const dispatch = useDispatch();
+
+    const _handleLongPress = () => {
+
+        Alert.alert('Confirm', 'Do you want to delete this note ?', [
+            { text: 'Yes', onPress: () => { dispatch(removeNoteAction(id)); } },
+            { text: 'No', onPress: () => { return; } },
+        ], { cancelable: false });
+    };
+
     const formattedBody = body.length <= 124 ? body : _get45Percent(body) + '...';
 
     return (
-        <TouchableOpacity onPress={() => navigation.navigate('edit_notes_screen', { data: { id, title, color, body } })}>
+        <TouchableOpacity onLongPress={() => _handleLongPress()} onPress={() => navigation.navigate('edit_notes_screen', { data: { id, title, color, body } })}>
             <View style={{ ...styles.card, backgroundColor: color }}>
                 <Text style={styles.cardTitle}>{title}</Text>
                 <Text style={styles.cardBody}>{formattedBody}</Text>
@@ -48,7 +59,7 @@ const NotesScreen = ({ navigation }): React.JSX.Element => {
         if (auth.userId === '') {
             navigation.navigate('auth_screen');
         }
-        dispatch(fetchNotesAction('1'));
+        dispatch(fetchNotesAction());
     }, [dispatch, navigation, auth.userId]);
 
     return (
@@ -67,7 +78,7 @@ const NotesScreen = ({ navigation }): React.JSX.Element => {
                     </View>
                 </ScrollView>
             }
-            <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('edit_notes_screen', { data: { title: '', color: '#67A900', body: '' } })}><View style={styles.addButtonContainer}><Text style={styles.addButtonText}>+</Text></View></TouchableOpacity>
+            <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('edit_notes_screen', { data: { id: '', title: '', color: getRandomColor(), body: '' } })}><View style={styles.addButtonContainer}><Text style={styles.addButtonText}>+</Text></View></TouchableOpacity>
         </View >
     );
 };

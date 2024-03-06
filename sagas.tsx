@@ -1,20 +1,111 @@
 /* eslint-disable prettier/prettier */
 import { all, put, takeEvery, call } from 'redux-saga/effects';
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 import { UPDATE_AUTH_STATUS_REQUEST, USER_LOGIN_REQUEST, USER_LOGOUT_REQUEST, USER_REGISTER_REQUEST } from './actions/authActions';
-import { ADD_NOTE_REQUEST, FETCH_NOTES_REQUEST, REMOVE_NOTE_REQUEST } from './actions/notesActions';
+import { ADD_NOTE_REQUEST, FETCH_NOTES_REQUEST, REMOVE_NOTE_REQUEST, UPDATE_NOTE_REQUEST } from './actions/notesActions';
 
-const addNoteAsync = async () => {
+const addNoteAPI = async (note) => {
+    const user = auth().currentUser;
+    const uid = user ? user.uid : null;
 
+    if (uid) {
+        try {
+            const documentRef = await firestore().collection('notes').doc(uid).collection('data').add(note);
+            return { success: true, id: documentRef.id };
+        } catch (error) {
+            console.log(error);
+            return { success: false };
+        }
+    } else {
+        return { success: false };
+    }
 };
 
-const fetchNotesAsync = async () => {
+const fetchNotesAPI = async () => {
+    const user = auth().currentUser;
+    const uid = user ? user.uid : null;
 
+    if (uid) {
+        try {
+            const querySnapshot = await firestore().collection('notes').doc(uid).collection('data').get();
+
+            const documents = [];
+            if (!querySnapshot.empty) {
+                querySnapshot.forEach((doc) => {
+                    documents.push({ id: doc.id, ...doc.data() });
+                });
+            }
+
+            return { success: true, payload: documents };
+        } catch (error) {
+            return { success: false };
+        }
+    } else {
+        return { success: false };
+    }
 };
 
-const removeNoteAsync = async () => {
+const removeNoteAPI = async (noteId) => {
+    const user = auth().currentUser;
+    const uid = user ? user.uid : null;
 
+    if (uid) {
+        try {
+            await firestore().collection('notes').doc(uid).collection('data').doc(noteId).delete();
+            return { success: true };
+        } catch (error) {
+            return { success: false };
+        }
+    } else {
+        return { success: false };
+    }
 };
+
+const updateNoteAPI = async (note) => {
+    const user = auth().currentUser;
+    const uid = user ? user.uid : null;
+
+    if (uid) {
+        try {
+            const noteRef = firestore().collection('notes').doc(uid).collection('data').doc(note.id);
+
+            await noteRef.update({
+                title: note.title,
+                body: note.body,
+            });
+
+            return { success: true };
+        } catch (error) {
+            return { success: false };
+        }
+    } else {
+        return { success: false };
+    }
+};
+
+function* fetchNotesAsync() {
+    const result = yield call(() => fetchNotesAPI());
+    yield put({ type: 'notes/fetchNotes', payload: result.success ? result.payload : [] });
+}
+
+function* removeNoteAsync(action) {
+    const id = action.payload;
+    const result = yield call(() => removeNoteAPI(id));
+    yield put({ type: 'notes/removeNote', payload: { success: result.success, id: result.success ? id : null } });
+}
+
+function* addNoteAsync(action) {
+    const note = action.payload;
+    const result = yield call(() => addNoteAPI(note));
+    yield put({ type: 'notes/addNote', payload: { success: result.success, note: result.success ? { ...note, id: result.id } : null } });
+}
+
+function* updateNoteAsync(action) {
+    const note = action.payload;
+    const result = yield call(() => updateNoteAPI(note));
+    yield put({ type: 'notes/updateNote', payload: { success: result.success, note: result.success ? note : null } });
+}
 
 function* addNoteSaga() {
     yield takeEvery(ADD_NOTE_REQUEST, addNoteAsync);
@@ -26,6 +117,10 @@ function* fetchNotesSaga() {
 
 function* removeNoteSaga() {
     yield takeEvery(REMOVE_NOTE_REQUEST, removeNoteAsync);
+}
+
+function* updateNoteSaga() {
+    yield takeEvery(UPDATE_NOTE_REQUEST, updateNoteAsync);
 }
 
 const loginAPI = async (email, password) => {
@@ -111,5 +206,6 @@ export default function* mySaga() {
         addNoteSaga(),
         fetchNotesSaga(),
         removeNoteSaga(),
+        updateNoteSaga(),
     ]);
 }
